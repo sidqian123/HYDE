@@ -79,11 +79,16 @@ function isIngredientMatch(ingredient, allergen) {
 // Process extracted ingredients with improved matching
 chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
     if (message.type === "INGREDIENTS_FOUND") {
+        console.log("Received ingredients:", message.data);
+        
         let extractedIngredients = message.data
             .split(/[,.]/)
             .map(i => i.trim().toLowerCase())
-            .filter(i => i.length > 1 && !i.includes('may contain'));  // Exclude "may contain" ingredients
-        
+            .filter(i => i.length > 1);
+            
+        console.log("Processed ingredients:", extractedIngredients);
+        console.log("Current allergens:", userAllergens);
+
         let flagged = [];
         let processed = new Set();
 
@@ -93,12 +98,21 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
 
             // Check for matches
             for (let allergen of userAllergens) {
-                if (isIngredientMatch(ingredient, allergen)) {
+                allergen = allergen.toLowerCase().trim();
+                ingredient = ingredient.toLowerCase().trim();
+                
+                console.log(`Comparing - Ingredient: "${ingredient}" with Allergen: "${allergen}"`);
+                
+                // Direct match or contains
+                if (ingredient === allergen || ingredient.includes(allergen)) {
+                    console.log("Match found!");
                     flagged.push(ingredient);
                     break;
                 }
             }
         }
+
+        console.log("Flagged ingredients:", flagged);
 
         // Save results for popup
         chrome.storage.local.set({ 

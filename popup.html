@@ -1,21 +1,36 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>Ingredient Checker</title>
+    <meta charset="UTF-8">
+    <title>Beauty Guard</title>
+    <link rel="stylesheet" href="styles.css">
     <script src="popup.js"></script>
-    
 </head>
 <body>
-    <h2>Allergen List</h2>
-    <textarea id="allergenList" placeholder="Enter allergens (comma separated)"></textarea>
-    <button id="saveAllergens">Save</button>
+    <div class="container">
+        <div class="header">
+            <h1>Beauty Guard</h1>
+            <div class="animation-circle" id="scanningCircle"></div>
+        </div>
 
-    <h2>Manual Check</h2>
-    <textarea id="manualIngredients" placeholder="Enter ingredients to check (comma separated)"></textarea>
-    <button id="checkManual">Check Ingredients</button>
+        <div class="section">
+            <h2>Your Allergens</h2>
+            <div class="input-wrapper">
+                <input type="text" id="allergenInput" placeholder="Type to add allergen...">
+                <div id="autocompleteList" class="autocomplete-items"></div>
+            </div>
+            <button id="addAllergen" class="gradient-button">Add</button>
+            <div class="allergen-tags" id="allergenTags"></div>
+        </div>
 
-    <h2>Scan Results</h2>
-    <button id="refreshScan">Refresh Page Scan</button>
-    <div id="results">No scan yet.</div>
+        <div class="section">
+            <h2>Scan Results</h2>
+            <button id="refreshScan" class="gradient-button">Refresh Scan</button>
+            <div class="results-container">
+                <div class="ingredients-wheel" id="ingredientsWheel"></div>
+                <div class="alert-container" id="alertContainer"></div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
