@@ -1,5 +1,5 @@
 // Beauty product page detection patterns
-const BEAUTY_PATTERNS = {
+const POPUP_PATTERNS = {
     urls: [
         /sephora\.com/i,
         /ulta\.com/i,
@@ -52,12 +52,12 @@ function isBeautyProductPage() {
     const pageText = document.body.innerText.toLowerCase();
     
     // Check URL patterns
-    if (BEAUTY_PATTERNS.urls.some(pattern => pattern.test(url))) {
+    if (POPUP_PATTERNS.urls.some(pattern => pattern.test(url))) {
         return true;
     }
 
     // Check for beauty-related keywords in the page
-    const keywordCount = BEAUTY_PATTERNS.keywords.reduce((count, keyword) => {
+    const keywordCount = POPUP_PATTERNS.keywords.reduce((count, keyword) => {
         return count + (pageText.includes(keyword.toLowerCase()) ? 1 : 0);
     }, 0);
 
@@ -236,8 +236,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
 });
 
-// Create popup immediately when extension loads
-createPopup();
+// Only auto-create popup on beauty pages
+if (isBeautyProductPage()) {
+    createPopup();
+}
 
 function createPopup() {
     console.log("Creating popup");
