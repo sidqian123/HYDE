@@ -1,0 +1,220 @@
+:root {
+    --primary-color: #FF69B4;
+    --gradient-start: #FF69B4;
+    --gradient-end: #FFB6C1;
+    --background: #FFF0F5;
+    --text-color: #4A4A4A;
+    --danger: #FF4444;
+    --success: #00C851;
+}
+
+.beauty-guard-popup {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 350px;
+    height: 450px;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    z-index: 2147483647;
+    cursor: move;
+    animation: slideIn 0.3s ease-out;
+}
+
+.beauty-guard-popup .container {
+    padding: 20px;
+    height: 100%;
+    overflow-y: auto;
+    cursor: default;
+    box-sizing: border-box;
+}
+
+.beauty-guard-popup .header {
+    position: sticky;
+    top: 0;
+    background: white;
+    padding-bottom: 15px;
+    z-index: 1;
+    text-align: center;
+    margin-bottom: 25px;
+}
+
+.beauty-guard-popup h1 {
+    background: linear-gradient(45deg, var(--gradient-start), var(--gradient-end));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-size: 24px;
+    margin: 0;
+}
+
+.beauty-guard-popup .close-button {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    color: black;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 20px;
+    border: none;
+    transition: transform 0.2s;
+}
+
+.beauty-guard-popup .close-button:hover {
+    transform: scale(1.1);
+}
+
+.beauty-guard-popup .section {
+    margin-bottom: 25px;
+}
+
+.beauty-guard-popup h2 {
+    font-size: 18px;
+    color: var(--text-color);
+    margin-bottom: 15px;
+}
+
+.beauty-guard-popup .input-wrapper {
+    position: relative;
+    z-index: 2;
+    margin: 0 auto;
+    width: 90%;
+}
+
+.beauty-guard-popup input {
+    width: 100%;
+    padding: 10px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: border-color 0.3s;
+    box-sizing: border-box;
+}
+
+.beauty-guard-popup input:focus {
+    border-color: var(--primary-color);
+    outline: none;
+}
+
+.beauty-guard-popup .gradient-button {
+    background: linear-gradient(45deg, var(--gradient-start), var(--gradient-end));
+    border: none;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform 0.2s;
+    width: 90%;
+    margin: 10px auto;
+    display: block;
+    font-weight: 600;
+}
+
+.beauty-guard-popup .gradient-button:hover {
+    transform: translateY(-2px);
+}
+
+.beauty-guard-popup .allergen-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 15px auto;
+    width: 90%;
+}
+
+.beauty-guard-popup .tag {
+    background: linear-gradient(45deg, var(--gradient-start), var(--gradient-end));
+    color: white;
+    padding: 8px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    animation: fadeIn 0.3s ease-in;
+}
+
+.beauty-guard-popup .tag span {
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+}
+
+.beauty-guard-popup .tag span:hover {
+    transform: scale(1.2);
+}
+
+.beauty-guard-popup .alert-container {
+    margin-top: 15px;
+}
+
+.beauty-guard-popup .alert {
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    animation: slideIn 0.3s ease-out;
+}
+
+.beauty-guard-popup .alert.danger {
+    background: rgba(255, 68, 68, 0.1);
+    color: var(--danger);
+}
+
+.beauty-guard-popup .alert.success {
+    background: rgba(0, 200, 81, 0.1);
+    color: var(--success);
+}
+
+.beauty-guard-popup .autocomplete-items {
+    position: absolute;
+    border: 1px solid #ddd;
+    border-top: none;
+    z-index: 99;
+    top: 100%;
+    left: 0;
+    right: 0;
+    max-height: 200px;
+    overflow-y: auto;
+    background: white;
+    border-radius: 0 0 8px 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.beauty-guard-popup .autocomplete-item {
+    padding: 8px 12px;
+    cursor: pointer;
+}
+
+.beauty-guard-popup .autocomplete-item:hover {
+    background-color: var(--background);
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

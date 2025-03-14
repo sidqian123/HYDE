@@ -76,10 +76,29 @@ function isIngredientMatch(ingredient, allergen) {
     return wordBoundaryPattern.test(ingredient);
 }
 
-// Process extracted ingredients with improved matching
+// Listen for extension icon clicks
+chrome.action.onClicked.addListener(async (tab) => {
+    try {
+        // Check if we can inject the content script
+        await chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            files: ['content.js']
+        });
+        
+        // Send message after ensuring content script is loaded
+        await chrome.tabs.sendMessage(tab.id, { action: "togglePopup" });
+    } catch (error) {
+        console.error('Error:', error);
+    }
+});
+
+// Rest of your background code for handling allergens
 chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
     if (message.type === "INGREDIENTS_FOUND") {
         console.log("Received ingredients:", message.data);
+        
+        // Get current allergens
+        const { allergens = [] } = await chrome.storage.local.get(['allergens']);
         
         let extractedIngredients = message.data
             .split(/[,.]/)
@@ -87,7 +106,7 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
             .filter(i => i.length > 1);
             
         console.log("Processed ingredients:", extractedIngredients);
-        console.log("Current allergens:", userAllergens);
+        console.log("Current allergens:", allergens);
 
         let flagged = [];
         let processed = new Set();
@@ -97,29 +116,21 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
             processed.add(ingredient);
 
             // Check for matches
-            for (let allergen of userAllergens) {
-                allergen = allergen.toLowerCase().trim();
-                ingredient = ingredient.toLowerCase().trim();
-                
-                console.log(`Comparing - Ingredient: "${ingredient}" with Allergen: "${allergen}"`);
-                
-                // Direct match or contains
-                if (ingredient === allergen || ingredient.includes(allergen)) {
-                    console.log("Match found!");
+            for (let allergen of allergens) {
+                if (ingredient.includes(allergen.toLowerCase())) {
+                    console.log(`Match found: ${ingredient} contains ${allergen}`);
                     flagged.push(ingredient);
                     break;
                 }
             }
         }
 
-        console.log("Flagged ingredients:", flagged);
-
-        // Save results for popup
-        chrome.storage.local.set({ 
-            "lastCheck": { 
-                extractedIngredients: Array.from(processed), 
-                flagged 
-            } 
+        // Save results
+        await chrome.storage.local.set({
+            lastCheck: {
+                extractedIngredients: Array.from(processed),
+                flagged
+            }
         });
 
         if (flagged.length > 0) {

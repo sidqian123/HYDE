@@ -213,3 +213,304 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 // Initialize when the page loads
 initialize();
+
+// Initialize popup state
+let popup = null;
+let isDragging = false;
+let currentX;
+let currentY;
+let initialX;
+let initialY;
+let xOffset = 0;
+let yOffset = 0;
+
+// Listen for extension icon click
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    console.log("Message received:", request);
+    if (request.action === "togglePopup") {
+        if (!popup) {
+            createPopup();
+        } else {
+            removePopup();
+        }
+    }
+});
+
+// Create popup immediately when extension loads
+createPopup();
+
+function createPopup() {
+    console.log("Creating popup");
+    // Create popup container
+    popup = document.createElement('div');
+    popup.className = 'beauty-guard-popup';
+    
+    // Add your existing popup HTML content
+    popup.innerHTML = `
+        <div class="container">
+            <div class="header">
+                <button class="close-button">×</button>
+                <h1>Beauty Guard</h1>
+                <div class="animation-circle" id="scanningCircle"></div>
+            </div>
+
+            <div class="section">
+                <h2>Your Allergens</h2>
+                <div class="input-wrapper">
+                    <input type="text" id="allergenInput" placeholder="Type to add allergen...">
+                    <div id="autocompleteList" class="autocomplete-items"></div>
+                </div>
+                <button id="addAllergen" class="gradient-button">Add</button>
+                <div class="allergen-tags" id="allergenTags"></div>
+            </div>
+
+            <div class="section">
+                <h2>Scan Results</h2>
+                <button id="refreshScan" class="gradient-button">Refresh Scan</button>
+                <div class="results-container">
+                    <div class="ingredients-wheel" id="ingredientsWheel"></div>
+                    <div class="alert-container" id="alertContainer"></div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Add drag functionality
+    popup.addEventListener('mousedown', dragStart);
+    document.addEventListener('mousemove', drag);
+    document.addEventListener('mouseup', dragEnd);
+
+    // Add to page
+    document.body.appendChild(popup);
+    
+    // Initialize popup functionality
+    initializePopup();
+
+    // Add close button event listener after creating the popup
+    popup.querySelector('.close-button').addEventListener('click', removePopup);
+}
+
+function dragStart(e) {
+    if (e.target === popup) {
+        isDragging = true;
+        initialX = e.clientX - xOffset;
+        initialY = e.clientY - yOffset;
+        popup.classList.add('dragging');
+    }
+}
+
+function drag(e) {
+    if (isDragging) {
+        e.preventDefault();
+        currentX = e.clientX - initialX;
+        currentY = e.clientY - initialY;
+        xOffset = currentX;
+        yOffset = currentY;
+        setTranslate(currentX, currentY, popup);
+    }
+}
+
+function dragEnd(e) {
+    isDragging = false;
+    popup.classList.remove('dragging');
+}
+
+function setTranslate(xPos, yPos, el) {
+    el.style.transform = `translate(${xPos}px, ${yPos}px)`;
+}
+
+function removePopup() {
+    if (popup) {
+        document.body.removeChild(popup);
+        popup = null;
+    }
+}
+
+// Initialize popup functionality
+function initializePopup() {
+    const elements = {
+        allergenInput: document.getElementById("allergenInput"),
+        addButton: document.getElementById("addAllergen"),
+        refreshButton: document.getElementById("refreshScan"),
+        allergenTags: document.getElementById("allergenTags"),
+        alertContainer: document.getElementById("alertContainer"),
+        autocompleteList: document.getElementById("autocompleteList")
+    };
+
+    // Common ingredient database for autocomplete
+    const commonIngredients = {
+        "Dimethicone": ["dimethicone", "dimethylpolysiloxane"],
+        "Octyldodecanol": ["octyl dodecanol", "2-octyldodecanol", "2 octyl dodecanol"],
+        "Titanium Dioxide": ["titanium dioxide", "ti02", "titanium oxide"],
+        "Glycerin": ["glycerin", "glycerine", "glycerol"],
+        "Phenoxyethanol": ["phenoxyethanol"],
+        "Tocopherol": ["tocopherol", "vitamin e"],
+        "Niacinamide": ["niacinamide", "vitamin b3", "nicotinamide"],
+        "Hyaluronic Acid": ["hyaluronic acid", "sodium hyaluronate"],
+        "Salicylic Acid": ["salicylic acid", "beta hydroxy acid", "bha"],
+        "Retinol": ["retinol", "vitamin a", "retinyl palmitate"],
+        "Parabens": ["methylparaben", "propylparaben", "butylparaben", "ethylparaben"],
+        "Fragrance": ["fragrance", "parfum", "perfume", "aroma"],
+        "Sodium Lauryl Sulfate": ["sls", "sodium lauryl sulfate", "sodium dodecyl sulfate"],
+        "Propylene Glycol": ["propylene glycol", "1,2-propanediol"],
+        "Benzyl Alcohol": ["benzyl alcohol"],
+        "Methylisothiazolinone": ["methylisothiazolinone", "mi", "methylisothiazoline"]
+    };
+
+    let currentAllergens = new Set();
+
+    // Load saved allergens
+    chrome.storage.local.get(["allergens"], function (result) {
+        if (result.allergens) {
+            currentAllergens = new Set(result.allergens);
+            updateAllergenTags();
+        }
+    });
+
+    // Autocomplete functionality
+    elements.allergenInput.addEventListener("input", function() {
+        const value = this.value.toLowerCase().trim();
+        console.log("Search value:", value);
+        
+        elements.autocompleteList.innerHTML = "";
+        elements.autocompleteList.style.display = "none";
+
+        if (value.length < 1) return;
+
+        // Search through main ingredients and their variations
+        const matches = Object.entries(commonIngredients).filter(([main, variations]) => {
+            const mainMatch = main.toLowerCase().includes(value);
+            const variationMatch = variations.some(v => v.toLowerCase().includes(value));
+            return mainMatch || variationMatch;
+        });
+
+        console.log("Found matches:", matches);
+
+        if (matches.length > 0) {
+            elements.autocompleteList.style.display = "block";
+            matches.forEach(([main, variations]) => {
+                const div = document.createElement("div");
+                div.className = "autocomplete-item";
+                
+                let displayText = main;
+                const matchIndex = main.toLowerCase().indexOf(value);
+                if (matchIndex !== -1) {
+                    const beforeMatch = main.slice(0, matchIndex);
+                    const matchedPart = main.slice(matchIndex, matchIndex + value.length);
+                    const afterMatch = main.slice(matchIndex + value.length);
+                    displayText = `${beforeMatch}<strong>${matchedPart}</strong>${afterMatch}`;
+                }
+                
+                div.innerHTML = displayText;
+                
+                div.addEventListener("click", () => {
+                    elements.allergenInput.value = main;
+                    elements.autocompleteList.style.display = "none";
+                });
+                
+                div.title = `Also known as: ${variations.join(", ")}`;
+                elements.autocompleteList.appendChild(div);
+            });
+        }
+    });
+
+    // Update allergen tags display
+    function updateAllergenTags() {
+        elements.allergenTags.innerHTML = "";
+        currentAllergens.forEach(allergen => {
+            const tag = document.createElement("div");
+            tag.className = "tag";
+            tag.innerHTML = `
+                ${allergen}
+                <span class="remove-tag">×</span>
+            `;
+            
+            tag.querySelector('.remove-tag').addEventListener('click', (e) => {
+                e.stopPropagation();
+                currentAllergens.delete(allergen);
+                updateAllergenTags();
+                saveAllergensAndScan();
+            });
+            
+            elements.allergenTags.appendChild(tag);
+        });
+    }
+
+    // Save allergens and trigger scan
+    function saveAllergensAndScan() {
+        chrome.storage.local.set({ 
+            "allergens": Array.from(currentAllergens) 
+        }, () => {
+            // Extract ingredients from the page
+            const ingredients = extractIngredients();
+            if (ingredients) {
+                // Update the UI with scan results
+                updateScanResults(ingredients);
+            }
+        });
+    }
+
+    // Update scan results in the UI
+    function updateScanResults(ingredients) {
+        const ingredientsList = ingredients.split(',').map(i => i.trim().toLowerCase());
+        const matches = Array.from(currentAllergens).filter(allergen => 
+            ingredientsList.some(ingredient => ingredient.includes(allergen.toLowerCase()))
+        );
+
+        elements.alertContainer.innerHTML = "";
+        
+        if (matches.length > 0) {
+            const alert = document.createElement('div');
+            alert.className = 'alert danger';
+            alert.innerHTML = `
+                <span class="alert-icon">⚠️</span>
+                <span>Found ${matches.length} potential allergen${matches.length > 1 ? 's' : ''}: ${matches.join(", ")}</span>
+            `;
+            elements.alertContainer.appendChild(alert);
+        } else {
+            const alert = document.createElement('div');
+            alert.className = 'alert success';
+            alert.innerHTML = `
+                <span class="alert-icon">✅</span>
+                <span>No allergens detected in this product</span>
+            `;
+            elements.alertContainer.appendChild(alert);
+        }
+    }
+
+    // Add new allergen
+    function addNewAllergen() {
+        const value = elements.allergenInput.value.trim();
+        if (value) {
+            currentAllergens.add(value.toLowerCase());
+            elements.allergenInput.value = "";
+            updateAllergenTags();
+            saveAllergensAndScan();
+        }
+    }
+
+    // Event listeners
+    elements.addButton.addEventListener("click", addNewAllergen);
+    elements.allergenInput.addEventListener("keypress", function(e) {
+        if (e.key === "Enter") {
+            addNewAllergen();
+        }
+    });
+    elements.refreshButton.addEventListener("click", () => {
+        const ingredients = extractIngredients();
+        if (ingredients) {
+            updateScanResults(ingredients);
+        }
+    });
+
+    // Close autocomplete on click outside
+    document.addEventListener("click", function(e) {
+        if (!elements.allergenInput.contains(e.target) && 
+            !elements.autocompleteList.contains(e.target)) {
+            elements.autocompleteList.style.display = "none";
+        }
+    });
+}
+
+// Create popup when the script loads
+console.log("Content script loaded");
