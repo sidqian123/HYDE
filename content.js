@@ -250,7 +250,7 @@ function createPopup() {
         <div class="container">
             <div class="header">
                 <button class="close-button">×</button>
-                <h1>Beauty Guard</h1>
+                <h1>HYDE</h1>
                 <div class="animation-circle" id="scanningCircle"></div>
             </div>
 

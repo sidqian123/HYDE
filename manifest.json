@@ -1,6 +1,6 @@
 {
     "manifest_version": 3,
-    "name": "Beauty Guard",
+    "name": "HYDE",
     "version": "1.0",
     "description": "Scan beauty products for allergens and ingredients",
     "permissions": [
